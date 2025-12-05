@@ -49,52 +49,54 @@ saveItem.onclick = () => {
   if (!name) return alert("Please enter a name");
   if (!file) return alert("Please add a photo");
 
-  const reader = new FileReader();
-
   // ✅ Show progress bar
   progressContainer.classList.remove("hidden");
   uploadProgress.value = 0;
 
-  // ✅ Track progress (mobile-safe)
+  // ✅ Create a NEW FileReader every time (mobile fix)
+  const reader = new FileReader();
+
+  // ✅ Track progress
   reader.onprogress = (event) => {
     if (event.lengthComputable) {
-      const percent = Math.round((event.loaded / event.total) * 100);
-      uploadProgress.value = percent;
+      uploadProgress.value = Math.round((event.loaded / event.total) * 100);
     }
   };
 
-  // ✅ MUST use onloadend for mobile reliability
+  // ✅ Mobile-safe final event
   reader.onloadend = () => {
-    uploadProgress.value = 100;
-
-    const newItem = {
-      name,
-      note,
-      image: reader.result,
-      date: new Date().toLocaleString()
-    };
-
-    items.push(newItem);
-    localStorage.setItem("items", JSON.stringify(items));
-
-    renderItems();
-
-    // ✅ Reset inputs
-    document.getElementById("itemName").value = "";
-    document.getElementById("itemNote").value = "";
-    fileInput.value = "";
-
-    // ✅ Hide progress bar AFTER saving
+    // ✅ Force microtask flush (critical for iOS/Android)
     setTimeout(() => {
-      progressContainer.classList.add("hidden");
-      uploadProgress.value = 0;
-      modal.classList.add("hidden");
-    }, 300);
+      const newItem = {
+        name,
+        note,
+        image: reader.result,
+        date: new Date().toLocaleString()
+      };
+
+      items.push(newItem);
+      localStorage.setItem("items", JSON.stringify(items));
+
+      renderItems();
+
+      // ✅ Reset inputs
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemNote").value = "";
+      fileInput.value = "";
+
+      // ✅ Hide progress bar AFTER everything is saved
+      setTimeout(() => {
+        progressContainer.classList.add("hidden");
+        uploadProgress.value = 0;
+        modal.classList.add("hidden");
+      }, 200);
+    }, 50); // ✅ This delay is the key fix
   };
 
   // ✅ Start reading AFTER handlers are set
   reader.readAsDataURL(file);
 };
+
 
 renderItems();
 
