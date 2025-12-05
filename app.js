@@ -6,6 +6,9 @@ const closeModal = document.getElementById("closeModal");
 const saveItem = document.getElementById("saveItem");
 const itemsContainer = document.getElementById("items");
 
+const progressContainer = document.getElementById("progressContainer");
+const uploadProgress = document.getElementById("uploadProgress");
+
 function renderItems() {
   itemsContainer.innerHTML = "";
   items.forEach((item, index) => {
@@ -36,7 +39,7 @@ closeModal.onclick = () => {
   modal.classList.add("hidden");
 };
 
-// ✅ FIXED: Mobile-safe save logic
+// ✅ MOBILE-SAFE SAVE WITH PROGRESS BAR
 saveItem.onclick = () => {
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
@@ -48,8 +51,22 @@ saveItem.onclick = () => {
 
   const reader = new FileReader();
 
-  // ✅ MUST WAIT for FileReader to finish (mobile fix)
+  // ✅ Show progress bar
+  progressContainer.classList.remove("hidden");
+  uploadProgress.value = 0;
+
+  // ✅ Track progress (mobile-safe)
+  reader.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const percent = Math.round((event.loaded / event.total) * 100);
+      uploadProgress.value = percent;
+    }
+  };
+
+  // ✅ MUST use onloadend for mobile reliability
   reader.onloadend = () => {
+    uploadProgress.value = 100;
+
     const newItem = {
       name,
       note,
@@ -62,16 +79,20 @@ saveItem.onclick = () => {
 
     renderItems();
 
-    // ✅ Reset inputs (mobile fix)
+    // ✅ Reset inputs
     document.getElementById("itemName").value = "";
     document.getElementById("itemNote").value = "";
     fileInput.value = "";
 
-    // ✅ Close modal AFTER everything is done
-    modal.classList.add("hidden");
+    // ✅ Hide progress bar AFTER saving
+    setTimeout(() => {
+      progressContainer.classList.add("hidden");
+      uploadProgress.value = 0;
+      modal.classList.add("hidden");
+    }, 300);
   };
 
-  // ✅ Mobile requires readAsDataURL AFTER onloadend is set
+  // ✅ Start reading AFTER handlers are set
   reader.readAsDataURL(file);
 };
 
