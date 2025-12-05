@@ -13,7 +13,6 @@ function openDB() {
           keyPath: "id",
           autoIncrement: true
         });
-        // name, note, imageBlob, date
         store.createIndex("date", "date", { unique: false });
       }
     };
@@ -28,8 +27,8 @@ async function addItemToDB(item) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     tx.objectStore(STORE_NAME).add(item);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
   });
 }
 
@@ -39,7 +38,7 @@ async function getAllItems() {
     const tx = db.transaction(STORE_NAME, "readonly");
     const request = tx.objectStore(STORE_NAME).getAll();
     request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => reject(request.error);
+    request.onerror = reject;
   });
 }
 
@@ -48,7 +47,28 @@ async function deleteItemFromDB(id) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     tx.objectStore(STORE_NAME).delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+async function clearAllItems() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).clear();
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+async function bulkAddItems(items) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    items.forEach((item) => store.add(item));
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
   });
 }
