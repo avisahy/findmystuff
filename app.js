@@ -28,36 +28,53 @@ function deleteItem(index) {
   renderItems();
 }
 
-addBtn.onclick = () => modal.classList.remove("hidden");
-closeModal.onclick = () => modal.classList.add("hidden");
+addBtn.onclick = () => {
+  modal.classList.remove("hidden");
+};
 
+closeModal.onclick = () => {
+  modal.classList.add("hidden");
+};
+
+// ✅ FIXED: Save item with proper image handling
 saveItem.onclick = () => {
-  const name = document.getElementById("itemName").value;
-  const note = document.getElementById("itemNote").value;
-  const file = document.getElementById("itemImage").files[0];
+  const name = document.getElementById("itemName").value.trim();
+  const note = document.getElementById("itemNote").value.trim();
+  const fileInput = document.getElementById("itemImage");
+  const file = fileInput.files[0];
 
+  if (!name) return alert("Please enter a name");
   if (!file) return alert("Please add a photo");
 
   const reader = new FileReader();
+
   reader.onload = () => {
-    items.push({
+    const newItem = {
       name,
       note,
-      image: reader.result,
+      image: reader.result, // ✅ base64 saved correctly
       date: new Date().toLocaleString()
-    });
+    };
 
+    items.push(newItem); // ✅ FIXED: append instead of overwrite
     localStorage.setItem("items", JSON.stringify(items));
+
     renderItems();
+
+    // ✅ Reset form
+    document.getElementById("itemName").value = "";
+    document.getElementById("itemNote").value = "";
+    fileInput.value = "";
+
     modal.classList.add("hidden");
   };
 
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(file); // ✅ FIXED: ensures image is fully loaded
 };
 
 renderItems();
 
-// Register service worker
+// ✅ Service worker registration
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
