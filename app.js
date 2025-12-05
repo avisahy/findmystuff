@@ -19,96 +19,101 @@ function renderItems() {
   items.forEach((item) => {
     const card = document.createElement("div");
     card.className = "item-card";
+
+    // Create object URL for blob
+    let imgUrl = "";
+    if (item.imageBlob) {
+      imgUrl = URL.createObjectURL(item.imageBlob);
+    }
+
     card.innerHTML = `
-      <img src="${item.image}" />
+      ${imgUrl ? `<img src="${imgUrl}" />` : ""}
       <h3>${item.name}</h3>
       <p>${item.note}</p>
       <small>${item.date}</small>
-      <button onclick="deleteItem(${item.id})">Delete</button>
+      <button data-id="${item.id}">Delete</button>
     `;
+
+    const deleteBtn = card.querySelector("button");
+    deleteBtn.onclick = async () => {
+      await deleteItemFromDB(item.id);
+      await loadItems();
+    };
+
     itemsContainer.appendChild(card);
   });
 }
 
-async function deleteItem(id) {
-  await deleteItemFromDB(id);
-  await loadItems();
-}
+addBtn.onclick = () => {
+  modal.classList.remove("hidden");
+};
 
-addBtn.onclick = () => modal.classList.remove("hidden");
-closeModal.onclick = () => modal.classList.add("hidden");
+closeModal.onclick = () => {
+  modal.classList.add("hidden");
+};
 
-saveItem.onclick = () => {
+// Save item (Blob-based, no base64, mobile-safe)
+saveItem.onclick = async () => {
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
   const fileInput = document.getElementById("itemImage");
   const file = fileInput.files[0];
 
-  if (!name) return alert("Please enter a name");
-  if (!file) return alert("Please add a photo");
+  if (!name) {
+    alert("Please enter a name");
+    return;
+  }
+  if (!file) {
+    alert("Please add a photo");
+    return;
+  }
 
+  // Show progress UI
   progressContainer.classList.remove("hidden");
   uploadProgress.value = 0;
 
-  const reader = new FileReader();
+  // Simulate progress (since we don't actually stream)
+  let fakeProgress = 0;
+  const interval = setInterval(() => {
+    fakeProgress += 10;
+    if (fakeProgress > 90) fakeProgress = 90;
+    uploadProgress.value = fakeProgress;
+  }, 80);
 
-  reader.onprogress = (event) => {
-    if (event.lengthComputable) {
-      uploadProgress.value = Math.round((event.loaded / event.total) * 100);
-    }
-  };
-
-  reader.onloadend = () => {
-  const img = new Image();
-
-  img.onload = async () => {
-    const canvas = document.createElement("canvas");
-    const MAX_WIDTH = 800;
-    const scale = MAX_WIDTH / img.width;
-
-    canvas.width = MAX_WIDTH;
-    canvas.height = img.height * scale;
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    const compressedImage = canvas.toDataURL("image/jpeg", 0.7);
-
+  try {
+    // Create a preview URL (not stored, only for immediate UI if needed)
+    // We store the blob itself in IndexedDB
     const newItem = {
       name,
       note,
-      image: compressedImage,
+      imageBlob: file,
       date: new Date().toLocaleString()
     };
 
-    // ✅ 1. Save to DB and WAIT for it
     await addItemToDB(newItem);
-
-    // ✅ 2. Force browser to release memory
-    await new Promise(r => setTimeout(r, 50));
-
-    // ✅ 3. Reload items AFTER DB is fully done
     await loadItems();
 
-    // ✅ 4. Reset inputs
+    // Finish progress
+    clearInterval(interval);
+    uploadProgress.value = 100;
+
+    // Reset inputs
     document.getElementById("itemName").value = "";
     document.getElementById("itemNote").value = "";
     fileInput.value = "";
 
-    // ✅ 5. Hide progress bar and close modal
     setTimeout(() => {
       progressContainer.classList.add("hidden");
       uploadProgress.value = 0;
       modal.classList.add("hidden");
-    }, 150);
-  };
-
-  img.src = reader.result;
-};
-
-
-
-  reader.readAsDataURL(file);
+    }, 200);
+  } catch (err) {
+    clearInterval(interval);
+    console.error("Error saving item:", err);
+    alert("There was an error saving the item.");
+    progressContainer.classList.add("hidden");
+    uploadProgress.value = 0;
+  }
 };
 
 loadItems();
