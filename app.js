@@ -36,7 +36,7 @@ closeModal.onclick = () => {
   modal.classList.add("hidden");
 };
 
-// ✅ FIXED: Save item with proper image handling
+// ✅ FIXED: Mobile-safe save logic
 saveItem.onclick = () => {
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
@@ -48,28 +48,31 @@ saveItem.onclick = () => {
 
   const reader = new FileReader();
 
-  reader.onload = () => {
+  // ✅ MUST WAIT for FileReader to finish (mobile fix)
+  reader.onloadend = () => {
     const newItem = {
       name,
       note,
-      image: reader.result, // ✅ base64 saved correctly
+      image: reader.result,
       date: new Date().toLocaleString()
     };
 
-    items.push(newItem); // ✅ FIXED: append instead of overwrite
+    items.push(newItem);
     localStorage.setItem("items", JSON.stringify(items));
 
     renderItems();
 
-    // ✅ Reset form
+    // ✅ Reset inputs (mobile fix)
     document.getElementById("itemName").value = "";
     document.getElementById("itemNote").value = "";
     fileInput.value = "";
 
+    // ✅ Close modal AFTER everything is done
     modal.classList.add("hidden");
   };
 
-  reader.readAsDataURL(file); // ✅ FIXED: ensures image is fully loaded
+  // ✅ Mobile requires readAsDataURL AFTER onloadend is set
+  reader.readAsDataURL(file);
 };
 
 renderItems();
