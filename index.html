@@ -11,10 +11,20 @@
 
   <header>
     <h1>Find My Stuff</h1>
-    <button id="addBtn">＋ Add Item</button>
+    <button id="darkToggle" class="dark-btn">🌙</button>
   </header>
 
+  <div class="toolbar">
+    <input id="searchInput" placeholder="Search by name..." />
+    <button id="exportBtn">Export</button>
+    <input type="file" id="importInput" accept="application/json" class="hidden" />
+    <button id="importBtn">Import</button>
+  </div>
+
   <main id="items"></main>
+
+  <!-- Floating Add button -->
+  <button id="addBtn" class="fab">＋</button>
 
   <div id="addModal" class="modal hidden">
     <div class="modal-content">
