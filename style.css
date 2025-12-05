@@ -1,7 +1,9 @@
+/* Light mode defaults */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   background: #f5f5f5;
+  color: #000;
 }
 
 header {
@@ -13,12 +15,36 @@ header {
   align-items: center;
 }
 
-#addBtn {
-  background: #4caf50;
-  color: white;
+.dark-btn {
+  background: transparent;
   border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
   padding: 10px 15px;
-  border-radius: 5px;
+  background: #ffffff;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.toolbar input {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.toolbar button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #1976d2;
+  color: white;
   cursor: pointer;
 }
 
@@ -87,4 +113,58 @@ header {
 
 progress {
   width: 100%;
+}
+
+/* Floating Add Button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #4caf50;
+  color: white;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+/* ✅ DARK MODE */
+body.dark {
+  background: #121212;
+  color: #eee;
+}
+
+body.dark .toolbar {
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+}
+
+body.dark .toolbar input {
+  background: #222;
+  color: #eee;
+  border: 1px solid #444;
+}
+
+body.dark .item-card {
+  background: #1e1e1e;
+  color: #eee;
+}
+
+body.dark .modal-content {
+  background: #1e1e1e;
+  color: #eee;
+}
+
+body.dark header {
+  background: #000;
+}
+
+body.dark .fab {
+  background: #66bb6a;
 }
