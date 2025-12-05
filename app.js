@@ -58,17 +58,35 @@ saveItem.onclick = () => {
     }
   };
 
-  reader.onloadend = async () => {
+  reader.onloadend = () => {
+  const img = new Image();
+  img.onload = async () => {
+
+    // ✅ Create canvas
+    const canvas = document.createElement("canvas");
+    const MAX_WIDTH = 800; // mobile safe
+    const scale = MAX_WIDTH / img.width;
+
+    canvas.width = MAX_WIDTH;
+    canvas.height = img.height * scale;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // ✅ Compress to JPEG (mobile safe)
+    const compressedImage = canvas.toDataURL("image/jpeg", 0.7);
+
     const newItem = {
       name,
       note,
-      image: reader.result,
+      image: compressedImage,
       date: new Date().toLocaleString()
     };
 
     await addItemToDB(newItem);
     await loadItems();
 
+    // ✅ Reset UI
     document.getElementById("itemName").value = "";
     document.getElementById("itemNote").value = "";
     fileInput.value = "";
@@ -79,6 +97,10 @@ saveItem.onclick = () => {
       modal.classList.add("hidden");
     }, 200);
   };
+
+  img.src = reader.result;
+};
+
 
   reader.readAsDataURL(file);
 };
