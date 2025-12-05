@@ -13,6 +13,13 @@ header {
   align-items: center;
 }
 
+#progressContainer {
+  margin-top: 10px;
+}
+progress {
+  width: 100%;
+}
+
 #addBtn {
   background: #4caf50;
   color: white;
