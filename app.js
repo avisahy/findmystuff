@@ -60,11 +60,10 @@ saveItem.onclick = () => {
 
   reader.onloadend = () => {
   const img = new Image();
-  img.onload = async () => {
 
-    // ✅ Create canvas
+  img.onload = async () => {
     const canvas = document.createElement("canvas");
-    const MAX_WIDTH = 800; // mobile safe
+    const MAX_WIDTH = 800;
     const scale = MAX_WIDTH / img.width;
 
     canvas.width = MAX_WIDTH;
@@ -73,7 +72,6 @@ saveItem.onclick = () => {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // ✅ Compress to JPEG (mobile safe)
     const compressedImage = canvas.toDataURL("image/jpeg", 0.7);
 
     const newItem = {
@@ -83,23 +81,31 @@ saveItem.onclick = () => {
       date: new Date().toLocaleString()
     };
 
+    // ✅ 1. Save to DB and WAIT for it
     await addItemToDB(newItem);
+
+    // ✅ 2. Force browser to release memory
+    await new Promise(r => setTimeout(r, 50));
+
+    // ✅ 3. Reload items AFTER DB is fully done
     await loadItems();
 
-    // ✅ Reset UI
+    // ✅ 4. Reset inputs
     document.getElementById("itemName").value = "";
     document.getElementById("itemNote").value = "";
     fileInput.value = "";
 
+    // ✅ 5. Hide progress bar and close modal
     setTimeout(() => {
       progressContainer.classList.add("hidden");
       uploadProgress.value = 0;
       modal.classList.add("hidden");
-    }, 200);
+    }, 150);
   };
 
   img.src = reader.result;
 };
+
 
 
   reader.readAsDataURL(file);
