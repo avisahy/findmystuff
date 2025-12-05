@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find My Stuff</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Find My Stuff</h1>
+    <button id="addBtn">＋ Add Item</button>
+  </header>
+
+  <main id="items"></main>
+
+  <div id="addModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Add Item</h2>
+      <input id="itemName" placeholder="Item name" />
+      <textarea id="itemNote" placeholder="Where did you leave it?"></textarea>
+      <input type="file" id="itemImage" accept="image/*" capture="environment" />
+      <button id="saveItem">Save</button>
+      <button id="closeModal">Cancel</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
