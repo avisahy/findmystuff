@@ -23,6 +23,15 @@ header {
   cursor: pointer;
 }
 
+.install-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 .toolbar {
   display: flex;
   gap: 8px;
