@@ -15,6 +15,7 @@ const importBtn = document.getElementById("importBtn");
 const importInput = document.getElementById("importInput");
 
 const darkToggle = document.getElementById("darkToggle");
+const installBtn = document.getElementById("installBtn");
 
 /* ✅ DARK MODE */
 if (localStorage.getItem("darkMode") === "true") {
@@ -27,6 +28,23 @@ darkToggle.onclick = () => {
   const isDark = document.body.classList.contains("dark");
   localStorage.setItem("darkMode", isDark);
   darkToggle.textContent = isDark ? "☀️" : "🌙";
+};
+
+/* ✅ INSTALL BUTTON */
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.remove("hidden");
+});
+
+installBtn.onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.classList.add("hidden");
 };
 
 /* Load items */
