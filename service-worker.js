@@ -1,11 +1,12 @@
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open("find-my-stuff-cache").then((cache) => {
+    caches.open("find-my-stuff-cache-v1").then((cache) => {
       return cache.addAll([
         "./",
         "index.html",
         "style.css",
         "app.js",
+        "db.js",
         "manifest.json"
       ]);
     })
