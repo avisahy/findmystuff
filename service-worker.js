@@ -3,11 +3,13 @@ self.addEventListener("install", (event) => {
     caches.open("find-my-stuff-cache-v1").then((cache) => {
       return cache.addAll([
         "./",
-        "index.html",
-        "style.css",
-        "app.js",
-        "db.js",
-        "manifest.json"
+        "./index.html",
+        "./style.css",
+        "./app.js",
+        "./db.js",
+        "./manifest.json",
+        "./icons/icon-192.png",
+        "./icons/icon-512.png"
       ]);
     })
   );
