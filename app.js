@@ -9,70 +9,80 @@ const itemsContainer = document.getElementById("items");
 const progressContainer = document.getElementById("progressContainer");
 const uploadProgress = document.getElementById("uploadProgress");
 
+const searchInput = document.getElementById("searchInput");
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+const importInput = document.getElementById("importInput");
+
+const darkToggle = document.getElementById("darkToggle");
+
+/* ✅ DARK MODE */
+if (localStorage.getItem("darkMode") === "true") {
+  document.body.classList.add("dark");
+  darkToggle.textContent = "☀️";
+}
+
+darkToggle.onclick = () => {
+  document.body.classList.toggle("dark");
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("darkMode", isDark);
+  darkToggle.textContent = isDark ? "☀️" : "🌙";
+};
+
+/* Load items */
 async function loadItems() {
   items = await getAllItems();
   renderItems();
 }
 
 function renderItems() {
+  const query = (searchInput.value || "").toLowerCase();
+
   itemsContainer.innerHTML = "";
-  items.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "item-card";
+  items
+    .filter((item) => item.name.toLowerCase().includes(query))
+    .forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "item-card";
 
-    // Create object URL for blob
-    let imgUrl = "";
-    if (item.imageBlob) {
-      imgUrl = URL.createObjectURL(item.imageBlob);
-    }
+      let imgUrl = "";
+      if (item.imageBlob) imgUrl = URL.createObjectURL(item.imageBlob);
 
-    card.innerHTML = `
-      ${imgUrl ? `<img src="${imgUrl}" />` : ""}
-      <h3>${item.name}</h3>
-      <p>${item.note}</p>
-      <small>${item.date}</small>
-      <button data-id="${item.id}">Delete</button>
-    `;
+      card.innerHTML = `
+        ${imgUrl ? `<img src="${imgUrl}" />` : ""}
+        <h3>${item.name}</h3>
+        <p>${item.note}</p>
+        <small>${item.date}</small>
+        <button data-id="${item.id}">Delete</button>
+      `;
 
-    const deleteBtn = card.querySelector("button");
-    deleteBtn.onclick = async () => {
-      await deleteItemFromDB(item.id);
-      await loadItems();
-    };
+      card.querySelector("button").onclick = async () => {
+        await deleteItemFromDB(item.id);
+        await loadItems();
+      };
 
-    itemsContainer.appendChild(card);
-  });
+      itemsContainer.appendChild(card);
+    });
 }
 
-addBtn.onclick = () => {
-  modal.classList.remove("hidden");
-};
+addBtn.onclick = () => modal.classList.remove("hidden");
+closeModal.onclick = () => modal.classList.add("hidden");
 
-closeModal.onclick = () => {
-  modal.classList.add("hidden");
-};
+searchInput.addEventListener("input", renderItems);
 
-// Save item (Blob-based, no base64, mobile-safe)
+/* ✅ Save item (Blob-based) */
 saveItem.onclick = async () => {
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
   const fileInput = document.getElementById("itemImage");
   const file = fileInput.files[0];
 
-  if (!name) {
-    alert("Please enter a name");
-    return;
-  }
-  if (!file) {
-    alert("Please add a photo");
-    return;
-  }
+  if (!name) return alert("Please enter a name");
+  if (!file) return alert("Please add a photo");
 
-  // Show progress UI
   progressContainer.classList.remove("hidden");
   uploadProgress.value = 0;
 
-  // Simulate progress (since we don't actually stream)
   let fakeProgress = 0;
   const interval = setInterval(() => {
     fakeProgress += 10;
@@ -81,8 +91,6 @@ saveItem.onclick = async () => {
   }, 80);
 
   try {
-    // Create a preview URL (not stored, only for immediate UI if needed)
-    // We store the blob itself in IndexedDB
     const newItem = {
       name,
       note,
@@ -93,11 +101,9 @@ saveItem.onclick = async () => {
     await addItemToDB(newItem);
     await loadItems();
 
-    // Finish progress
     clearInterval(interval);
     uploadProgress.value = 100;
 
-    // Reset inputs
     document.getElementById("itemName").value = "";
     document.getElementById("itemNote").value = "";
     fileInput.value = "";
@@ -109,12 +115,77 @@ saveItem.onclick = async () => {
     }, 200);
   } catch (err) {
     clearInterval(interval);
-    console.error("Error saving item:", err);
-    alert("There was an error saving the item.");
-    progressContainer.classList.add("hidden");
-    uploadProgress.value = 0;
+    alert("Error saving item.");
   }
 };
+
+/* ✅ Export */
+exportBtn.onclick = async () => {
+  const allItems = await getAllItems();
+
+  const serializable = await Promise.all(
+    allItems.map(
+      (item) =>
+        new Promise((resolve) => {
+          if (!item.imageBlob) return resolve(item);
+
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve({ ...item, imageBlob: reader.result });
+          };
+          reader.readAsDataURL(item.imageBlob);
+        })
+    )
+  );
+
+  const blob = new Blob([JSON.stringify(serializable)], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "find-my-stuff-backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* ✅ Import */
+importBtn.onclick = () => importInput.click();
+
+importInput.onchange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data = JSON.parse(reader.result);
+
+    data = data.map((item) => {
+      if (typeof item.imageBlob === "string") {
+        item.imageBlob = dataUrlToBlob(item.imageBlob);
+      }
+      return item;
+    });
+
+    await clearAllItems();
+    await bulkAddItems(data);
+    await loadItems();
+    alert("Import complete.");
+  };
+
+  reader.readAsText(file);
+  importInput.value = "";
+};
+
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)[1];
+  const binary = atob(base64);
+  const array = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+  return new Blob([array], { type: mime });
+}
 
 loadItems();
 
