@@ -13,19 +13,13 @@ header {
   align-items: center;
 }
 
-#progressContainer {
-  margin-top: 10px;
-}
-progress {
-  width: 100%;
-}
-
 #addBtn {
   background: #4caf50;
   color: white;
   border: none;
   padding: 10px 15px;
   border-radius: 5px;
+  cursor: pointer;
 }
 
 #items {
@@ -40,11 +34,26 @@ progress {
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .item-card img {
   width: 100%;
   border-radius: 5px;
+  object-fit: cover;
+  max-height: 200px;
+}
+
+.item-card button {
+  border: none;
+  background: #e53935;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-start;
 }
 
 .modal {
@@ -67,4 +76,15 @@ progress {
   border-radius: 10px;
   width: 90%;
   max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#progressContainer {
+  margin-top: 10px;
+}
+
+progress {
+  width: 100%;
 }
