@@ -7,7 +7,7 @@
   <!-- PWA install support -->
   <meta name="theme-color" content="#333333" />
   <link rel="manifest" href="/findmystuff/manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/findmystuff/icons/icon-192.png" />
 
   <title>Find My Stuff</title>
   <link rel="stylesheet" href="style.css" />
@@ -16,21 +16,19 @@
 
   <header>
     <h1>Find My Stuff</h1>
-    <button id="darkToggle" class="dark-btn">🌙</button>
+    <div class="header-actions">
+      <button id="darkToggle" class="dark-btn">🌙</button>
+      <button id="installBtn" class="install-btn" style="display:none;">
+        <img src="icons/install.png" alt="Install App" />
+      </button>
+    </div>
   </header>
-  
-  <div id="installBanner" class="install-banner hidden">
-    <p>📲 Install this app for offline use!</p>
-    <button id="installConfirm">Install</button>
-    <button id="installDismiss">Dismiss</button>
-  </div>
 
   <div class="toolbar">
     <input id="searchInput" placeholder="Search by name..." />
     <button id="exportBtn">Export</button>
     <input type="file" id="importInput" accept="application/json" class="hidden" />
     <button id="importBtn">Import</button>
-    <button id="installBtn" class="install-btn hidden">Install</button>
   </div>
 
   <main id="items"></main>
