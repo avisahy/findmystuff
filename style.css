@@ -82,7 +82,7 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  min-height: 260px; /* consistent baseline, no fixed height */
+  min-height: 260px;
   box-sizing: border-box;
 }
 
@@ -91,7 +91,7 @@ header {
   border-radius: 5px;
   object-fit: cover;
   height: 120px;
-  background: #eee; /* placeholder if no image */
+  background: #eee;
 }
 
 .item-card h3 {
@@ -102,7 +102,7 @@ header {
 .item-card p {
   margin: 6px 0;
   font-size: 0.95rem;
-  flex-grow: 1;
+  min-height: 40px; /* reserve space even if empty */
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -113,10 +113,11 @@ header {
 .item-card small {
   font-size: 0.8rem;
   color: #666;
+  margin-top: auto; /* always push timestamp to bottom */
 }
 
 .item-card .spacer {
-  flex-grow: 1; /* pushes delete button down */
+  flex-grow: 1; /* ensures delete button stays aligned */
 }
 
 .item-card button {
