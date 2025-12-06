@@ -37,8 +37,10 @@ darkToggle.onclick = () => {
 
 /* ✅ INSTALL BANNER */
 window.addEventListener("beforeinstallprompt", (e) => {
+  console.log("beforeinstallprompt fired"); // debug log
   e.preventDefault();
   deferredPrompt = e;
+  document.body.classList.add("banner-active"); // push content down
   installBanner.classList.remove("hidden"); // show banner
 });
 
@@ -47,11 +49,13 @@ installConfirm.onclick = async () => {
   deferredPrompt.prompt();
   const choice = await deferredPrompt.userChoice;
   deferredPrompt = null;
-  installBanner.classList.add("hidden"); // hide after choice
+  installBanner.classList.add("hidden");
+  document.body.classList.remove("banner-active");
 };
 
 installDismiss.onclick = () => {
   installBanner.classList.add("hidden");
+  document.body.classList.remove("banner-active");
 };
 
 /* ✅ Load items */
@@ -214,7 +218,7 @@ function dataUrlToBlob(dataUrl) {
 
 loadItems();
 
-/* ✅ Service worker registration */
+/* ✅ Service worker registration (GitHub Pages path) */
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/findmystuff/service-worker.js");
 }
