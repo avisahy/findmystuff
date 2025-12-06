@@ -81,7 +81,9 @@ header {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  height: 300px; /* fixed height for uniformity */
+  box-sizing: border-box;
 }
 
 .item-card img {
