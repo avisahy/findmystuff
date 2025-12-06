@@ -26,7 +26,7 @@
   <div class="toolbar">
     <input id="searchInput" placeholder="Search by name..." />
     <button id="exportBtn">Export</button>
-    <input type="file" id="importInput" accept="application/json" class="hidden" />
+    <input type="file" id="importInput" accept=".zip" class="hidden" />
     <button id="importBtn">Import</button>
   </div>
 
@@ -35,37 +35,24 @@
   <!-- Floating Add button -->
   <button id="addBtn" class="fab">＋</button>
 
-  <!-- Choice modal -->
-  <div id="choiceModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Add</h2>
-      <button id="addItemBtn">Add Item</button>
-      <button id="addContainerBtn">Add Container</button>
-      <button id="closeChoice">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Item modal -->
+  <!-- Item/Container modal -->
   <div id="addModal" class="modal hidden">
     <div class="modal-content">
-      <h2>Add Item</h2>
-      <input id="itemName" placeholder="Item name" />
-      <textarea id="itemNote" placeholder="Where did you leave it?"></textarea>
+      <h2>Add</h2>
+      <select id="itemType">
+        <option value="item">Item</option>
+        <option value="container">Container</option>
+      </select>
+      <input id="itemName" placeholder="Name" />
+      <textarea id="itemNote" placeholder="Description (for items only)"></textarea>
       <input type="file" id="itemImage" accept="image/*" capture="environment" />
       <button id="saveItem">Save</button>
       <button id="closeModal">Cancel</button>
     </div>
   </div>
 
-  <!-- Container modal -->
-  <div id="containerModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Add Container</h2>
-      <input id="containerName" placeholder="Container name" />
-      <button id="saveContainer">Save</button>
-      <button id="closeContainerModal">Cancel</button>
-    </div>
-  </div>
+  <!-- JSZip library for export/import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <script src="db.js"></script>
   <script src="app.js"></script>
