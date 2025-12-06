@@ -2,23 +2,18 @@ let containers = [];
 let currentContainer = null;
 
 const addBtn = document.getElementById("addBtn");
-const choiceModal = document.getElementById("choiceModal");
-const addItemBtn = document.getElementById("addItemBtn");
-const addContainerBtn = document.getElementById("addContainerBtn");
-const closeChoice = document.getElementById("closeChoice");
-
 const modal = document.getElementById("addModal");
 const closeModal = document.getElementById("closeModal");
 const saveItem = document.getElementById("saveItem");
-
-const containerModal = document.getElementById("containerModal");
-const closeContainerModal = document.getElementById("closeContainerModal");
-const saveContainer = document.getElementById("saveContainer");
 
 const itemsContainer = document.getElementById("items");
 
 const darkToggle = document.getElementById("darkToggle");
 const installBtn = document.getElementById("installBtn");
+
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+const importInput = document.getElementById("importInput");
 
 let deferredPrompt;
 
@@ -61,56 +56,38 @@ installBtn.onclick = async () => {
   }
 };
 
-/* Add button opens choice */
-addBtn.onclick = () => choiceModal.classList.remove("hidden");
-closeChoice.onclick = () => choiceModal.classList.add("hidden");
-
-/* Add Item */
-addItemBtn.onclick = () => {
-  choiceModal.classList.add("hidden");
-  modal.classList.remove("hidden");
-};
+/* Add button opens item modal */
+addBtn.onclick = () => modal.classList.remove("hidden");
 closeModal.onclick = () => modal.classList.add("hidden");
 
-/* Add Container */
-addContainerBtn.onclick = () => {
-  choiceModal.classList.add("hidden");
-  containerModal.classList.remove("hidden");
-};
-closeContainerModal.onclick = () => containerModal.classList.add("hidden");
-
-saveContainer.onclick = async () => {
-  const name = document.getElementById("containerName").value.trim();
-  if (!name) return alert("Enter a container name");
-
-  const newContainer = { id: Date.now(), name, items: [] };
-  await addContainerToDB(newContainer);
-  await loadContainers();
-  containerModal.classList.add("hidden");
-};
-
-/* Save Item */
+/* Save Item or Container */
 saveItem.onclick = async () => {
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
   const fileInput = document.getElementById("itemImage");
   const file = fileInput.files[0];
+  const typeSelect = document.getElementById("itemType").value; // "item" or "container"
 
-  if (!name) return alert("Enter item name");
+  if (!name) return alert("Enter a name");
 
-  const newItem = {
-    id: Date.now(),
-    name,
-    note,
-    date: new Date().toLocaleString(),
-    imageBlob: file || null
-  };
-
-  if (currentContainer) {
-    await addItemToContainer(currentContainer, newItem);
-    await renderItems(currentContainer);
+  if (typeSelect === "container") {
+    const newContainer = { id: Date.now(), name, items: [] };
+    await addContainerToDB(newContainer);
+    await loadContainers();
   } else {
-    alert("Please open a container first to add items.");
+    const newItem = {
+      id: Date.now(),
+      name,
+      note,
+      date: new Date().toLocaleString(),
+      imageBlob: file || null
+    };
+    if (currentContainer) {
+      await addItemToContainer(currentContainer, newItem);
+      await renderItems(currentContainer);
+    } else {
+      alert("Please open a container first to add items.");
+    }
   }
 
   modal.classList.add("hidden");
@@ -179,6 +156,75 @@ async function renderItems(containerId) {
     itemsContainer.appendChild(card);
   });
 }
+
+/* Export: JSON + images in ZIP */
+exportBtn.onclick = async () => {
+  const allContainers = await getAllContainers();
+  const zip = new JSZip();
+
+  const data = { containers: [] };
+
+  for (const c of allContainers) {
+    const containerCopy = { ...c, items: [] };
+    for (const item of c.items) {
+      const itemCopy = { ...item };
+      if (item.imageBlob) {
+        const filename = `images/item-${item.id}.png`;
+        const arrayBuffer = await item.imageBlob.arrayBuffer();
+        zip.file(filename, arrayBuffer);
+        itemCopy.imageFile = filename;
+        delete itemCopy.imageBlob;
+      }
+      containerCopy.items.push(itemCopy);
+    }
+    data.containers.push(containerCopy);
+  }
+
+  zip.file("backup.json", JSON.stringify(data, null, 2));
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "find-my-stuff-backup.zip";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* Import: read ZIP */
+importBtn.onclick = () => importInput.click();
+importInput.onchange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const zip = await JSZip.loadAsync(file);
+  const jsonData = await zip.file("backup.json").async("string");
+  const data = JSON.parse(jsonData);
+
+  await clearAllContainers();
+
+  for (const c of data.containers) {
+    const container = { id: c.id, name: c.name, items: [] };
+    for (const item of c.items) {
+      let imageBlob = null;
+      if (item.imageFile && zip.file(item.imageFile)) {
+        const arrayBuffer = await zip.file(item.imageFile).async("arraybuffer");
+        imageBlob = new Blob([arrayBuffer], { type: "image/png" });
+      }
+      container.items.push({
+        id: item.id,
+        name: item.name,
+        note: item.note,
+        date: item.date,
+        imageBlob
+      });
+    }
+    await addContainerToDB(container);
+  }
+
+  await loadContainers();
+  alert("Import complete.");
+  importInput.value = "";
+};
 
 /* Init */
 loadContainers();
