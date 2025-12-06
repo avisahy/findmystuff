@@ -93,6 +93,22 @@ header {
   max-height: 200px;
 }
 
+.item-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.item-card p {
+  flex-grow: 1;
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.item-card small {
+  font-size: 0.8rem;
+  color: #666;
+}
+
 .item-card button {
   border: none;
   background: #e53935;
@@ -101,6 +117,7 @@ header {
   border-radius: 4px;
   cursor: pointer;
   align-self: flex-start;
+  margin-top: auto; /* push to bottom */
 }
 
 /* Modal */
