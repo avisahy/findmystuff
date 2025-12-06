@@ -208,5 +208,5 @@ function dataUrlToBlob(dataUrl) {
 loadItems();
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/findmystuff/service-worker.js");
+  navigator.serviceWorker.register("findmystuff/service-worker.js");
 }
