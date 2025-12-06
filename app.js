@@ -86,8 +86,9 @@ function renderItems() {
       card.innerHTML = `
         ${imgUrl ? `<img src="${imgUrl}" />` : ""}
         <h3>${item.name}</h3>
-        <p>${item.note}</p>
+        <p>${item.note || ""}</p>
         <small>${item.date}</small>
+        <div class="spacer"></div>
         <button data-id="${item.id}">Delete</button>
       `;
 
@@ -99,6 +100,7 @@ function renderItems() {
       itemsContainer.appendChild(card);
     });
 }
+
 
 addBtn.onclick = () => modal.classList.remove("hidden");
 closeModal.onclick = () => modal.classList.add("hidden");
