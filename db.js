@@ -1,74 +1,68 @@
-const DB_NAME = "findMyStuffDB";
+const DB_NAME = "FindMyStuffDB";
 const DB_VERSION = 1;
-const STORE_NAME = "items";
+let db;
 
 function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, {
-          keyPath: "id",
-          autoIncrement: true
-        });
-        store.createIndex("date", "date", { unique: false });
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains("containers")) {
+        const store = db.createObjectStore("containers", { keyPath: "id" });
       }
     };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      resolve(db);
+    };
+    request.onerror = (e) => reject(e);
   });
 }
 
-async function addItemToDB(item) {
+/* Containers */
+async function addContainerToDB(container) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).add(item);
-    tx.oncomplete = resolve;
-    tx.onerror = reject;
+    const tx = db.transaction("containers", "readwrite");
+    tx.objectStore("containers").add(container);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e);
   });
 }
 
-async function getAllItems() {
+async function getAllContainers() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const request = tx.objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = reject;
+    const tx = db.transaction("containers", "readonly");
+    const req = tx.objectStore("containers").getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = (e) => reject(e);
   });
 }
 
-async function deleteItemFromDB(id) {
+async function updateContainer(container) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).delete(id);
-    tx.oncomplete = resolve;
-    tx.onerror = reject;
+    const tx = db.transaction("containers", "readwrite");
+    tx.objectStore("containers").put(container);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e);
   });
 }
 
-async function clearAllItems() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).clear();
-    tx.oncomplete = resolve;
-    tx.onerror = reject;
-  });
+/* Items inside containers */
+async function addItemToContainer(containerId, item) {
+  const containers = await getAllContainers();
+  const container = containers.find((c) => c.id === containerId);
+  if (!container) return;
+  container.items.push(item);
+  await updateContainer(container);
 }
 
-async function bulkAddItems(items) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    items.forEach((item) => store.add(item));
-    tx.oncomplete = resolve;
-    tx.onerror = reject;
-  });
+async function deleteItemFromContainer(containerId, itemId) {
+  const containers = await getAllContainers();
+  const container = containers.find((c) => c.id === containerId);
+  if (!container) return;
+  container.items = container.items.filter((i) => i.id !== itemId);
+  await updateContainer(container);
 }
