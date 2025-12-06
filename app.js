@@ -88,7 +88,6 @@ function renderItems() {
         <h3>${item.name}</h3>
         <p>${item.note || ""}</p>
         <small>${item.date}</small>
-        <div class="spacer"></div>
         <button data-id="${item.id}">Delete</button>
       `;
 
