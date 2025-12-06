@@ -82,7 +82,7 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  min-height: 260px;
+  min-height: 280px; /* consistent baseline */
   box-sizing: border-box;
 }
 
@@ -106,18 +106,14 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;   /* show max 3 lines */
+  -webkit-line-clamp: 3;   /* max 3 lines */
   -webkit-box-orient: vertical;
 }
 
 .item-card small {
   font-size: 0.8rem;
   color: #666;
-  margin-top: auto; /* always push timestamp to bottom */
-}
-
-.item-card .spacer {
-  flex-grow: 1; /* ensures delete button stays aligned */
+  margin-top: auto; /* pins timestamp to bottom */
 }
 
 .item-card button {
@@ -128,7 +124,9 @@ header {
   border-radius: 4px;
   cursor: pointer;
   align-self: flex-start;
+  margin-top: 6px; /* consistent spacing below timestamp */
 }
+
 
 /* Modal */
 .modal {
