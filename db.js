@@ -8,7 +8,7 @@ function openDB() {
     request.onupgradeneeded = (e) => {
       db = e.target.result;
       if (!db.objectStoreNames.contains("containers")) {
-        const store = db.createObjectStore("containers", { keyPath: "id" });
+        db.createObjectStore("containers", { keyPath: "id" });
       }
     };
     request.onsuccess = (e) => {
@@ -45,6 +45,16 @@ async function updateContainer(container) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction("containers", "readwrite");
     tx.objectStore("containers").put(container);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e);
+  });
+}
+
+async function clearAllContainers() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("containers", "readwrite");
+    tx.objectStore("containers").clear();
     tx.oncomplete = () => resolve();
     tx.onerror = (e) => reject(e);
   });
