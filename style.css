@@ -6,6 +6,10 @@ body {
   color: #000;
 }
 
+body.banner-active {
+  margin-top: 60px; /* adjust to banner height */
+}
+
 header {
   background: #333;
   color: white;
