@@ -62,34 +62,61 @@ closeModal.onclick = () => modal.classList.add("hidden");
 
 /* Save Item or Container */
 saveItem.onclick = async () => {
+  const typeSelect = document.getElementById("itemType").value; // "item" or "container"
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
   const fileInput = document.getElementById("itemImage");
   const file = fileInput.files[0];
-  const typeSelect = document.getElementById("itemType").value; // "item" or "container"
 
-  if (!name) return alert("Enter a name");
+  if (!name) {
+    alert("Name is required");
+    return;
+  }
 
   if (typeSelect === "container") {
-    const newContainer = { id: Date.now(), name, items: [] };
+    // ✅ Container: name required, desc + image optional
+    const newContainer = {
+      id: Date.now(),
+      name,
+      note,
+      imageBlob: file || null,
+      items: []
+    };
     await addContainerToDB(newContainer);
-    await loadContainers();
+    await loadContainers(); // refresh container list
   } else {
+    // ✅ Item: name + image required, desc optional
+    if (!file) {
+      alert("Image is required for items");
+      return;
+    }
     const newItem = {
       id: Date.now(),
       name,
       note,
       date: new Date().toLocaleString(),
-      imageBlob: file || null
+      imageBlob: file
     };
+
     if (currentContainer) {
+      // Inside a container → add and refresh immediately
       await addItemToContainer(currentContainer, newItem);
-      await renderItems(currentContainer);
+      await renderItems(currentContainer); // ✅ auto refresh
     } else {
-      alert("Please open a container first to add items.");
+      // On main page → add item directly
+      let rootContainer = containers.find(c => c.id === "root");
+      if (!rootContainer) {
+        rootContainer = { id: "root", name: "Main Items", items: [] };
+        await addContainerToDB(rootContainer);
+        containers.push(rootContainer);
+      }
+      rootContainer.items.push(newItem);
+      await updateContainer(rootContainer);
+      await loadContainers(); // refresh main page
     }
   }
 
+  // Reset modal
   modal.classList.add("hidden");
   document.getElementById("itemName").value = "";
   document.getElementById("itemNote").value = "";
