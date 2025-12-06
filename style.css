@@ -82,7 +82,7 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  min-height: 260px; /* consistent baseline */
+  min-height: 260px; /* consistent baseline, no fixed height */
   box-sizing: border-box;
 }
 
@@ -128,7 +128,6 @@ header {
   cursor: pointer;
   align-self: flex-start;
 }
-
 
 /* Modal */
 .modal {
