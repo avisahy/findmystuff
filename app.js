@@ -15,7 +15,12 @@ const importBtn = document.getElementById("importBtn");
 const importInput = document.getElementById("importInput");
 
 const darkToggle = document.getElementById("darkToggle");
-const installBtn = document.getElementById("installBtn");
+
+// ✅ Install banner elements
+let deferredPrompt;
+const installBanner = document.getElementById("installBanner");
+const installConfirm = document.getElementById("installConfirm");
+const installDismiss = document.getElementById("installDismiss");
 
 /* ✅ DARK MODE */
 if (localStorage.getItem("darkMode") === "true") {
@@ -30,24 +35,26 @@ darkToggle.onclick = () => {
   darkToggle.textContent = isDark ? "☀️" : "🌙";
 };
 
-/* ✅ INSTALL BUTTON */
-let deferredPrompt;
-
+/* ✅ INSTALL BANNER */
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.classList.remove("hidden");
+  installBanner.classList.remove("hidden"); // show banner
 });
 
-installBtn.onclick = async () => {
+installConfirm.onclick = async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
+  const choice = await deferredPrompt.userChoice;
   deferredPrompt = null;
-  installBtn.classList.add("hidden");
+  installBanner.classList.add("hidden"); // hide after choice
 };
 
-/* Load items */
+installDismiss.onclick = () => {
+  installBanner.classList.add("hidden");
+};
+
+/* ✅ Load items */
 async function loadItems() {
   items = await getAllItems();
   renderItems();
@@ -207,6 +214,7 @@ function dataUrlToBlob(dataUrl) {
 
 loadItems();
 
+/* ✅ Service worker registration */
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/findmystuff/service-worker.js");
 }
