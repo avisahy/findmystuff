@@ -82,7 +82,7 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  height: 300px; /* fixed height for uniformity */
+  min-height: 260px; /* consistent baseline */
   box-sizing: border-box;
 }
 
