@@ -1,13 +1,9 @@
-/* Light mode defaults */
+/* General layout */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   background: #f5f5f5;
   color: #000;
-}
-
-body.banner-active {
-  margin-top: 60px; /* adjust to banner height */
 }
 
 header {
@@ -19,6 +15,12 @@ header {
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .dark-btn {
   background: transparent;
   border: none;
@@ -27,6 +29,18 @@ header {
   cursor: pointer;
 }
 
+.install-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.install-btn img {
+  width: 24px;
+  height: 24px;
+}
+
+/* Toolbar */
 .toolbar {
   display: flex;
   gap: 8px;
@@ -52,47 +66,7 @@ header {
   cursor: pointer;
 }
 
-.install-btn {
-  background: #4caf50;
-}
-
-.install-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: #1976d2;
-  color: white;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 1000;
-}
-
-.install-banner p {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.install-banner button {
-  margin-left: 8px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#installConfirm {
-  background: #4caf50;
-  color: white;
-}
-
-#installDismiss {
-  background: #e53935;
-  color: white;
-}
-
+/* Items grid */
 #items {
   padding: 15px;
   display: grid;
@@ -127,6 +101,7 @@ header {
   align-self: flex-start;
 }
 
+/* Modal */
 .modal {
   position: fixed;
   top: 0; left: 0;
@@ -179,7 +154,7 @@ progress {
   cursor: pointer;
 }
 
-/* ✅ DARK MODE */
+/* Dark mode */
 body.dark {
   background: #121212;
   color: #eee;
