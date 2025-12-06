@@ -1,30 +1,32 @@
-let items = [];
+let containers = [];
+let currentContainer = null;
 
 const addBtn = document.getElementById("addBtn");
+const choiceModal = document.getElementById("choiceModal");
+const addItemBtn = document.getElementById("addItemBtn");
+const addContainerBtn = document.getElementById("addContainerBtn");
+const closeChoice = document.getElementById("closeChoice");
+
 const modal = document.getElementById("addModal");
 const closeModal = document.getElementById("closeModal");
 const saveItem = document.getElementById("saveItem");
+
+const containerModal = document.getElementById("containerModal");
+const closeContainerModal = document.getElementById("closeContainerModal");
+const saveContainer = document.getElementById("saveContainer");
+
 const itemsContainer = document.getElementById("items");
-
-const progressContainer = document.getElementById("progressContainer");
-const uploadProgress = document.getElementById("uploadProgress");
-
-const searchInput = document.getElementById("searchInput");
-const exportBtn = document.getElementById("exportBtn");
-const importBtn = document.getElementById("importBtn");
-const importInput = document.getElementById("importInput");
 
 const darkToggle = document.getElementById("darkToggle");
 const installBtn = document.getElementById("installBtn");
 
 let deferredPrompt;
 
-/* ✅ DARK MODE */
+/* Dark mode */
 if (localStorage.getItem("darkMode") === "true") {
   document.body.classList.add("dark");
   darkToggle.textContent = "☀️";
 }
-
 darkToggle.onclick = () => {
   document.body.classList.toggle("dark");
   const isDark = document.body.classList.contains("dark");
@@ -32,200 +34,156 @@ darkToggle.onclick = () => {
   darkToggle.textContent = isDark ? "☀️" : "🌙";
 };
 
-/* ✅ INSTALL BUTTON LOGIC */
+/* Install button */
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.style.display = "inline-flex"; // show button
+  installBtn.style.display = "inline-flex";
 });
-
-// Detect platform
 function getPlatform() {
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
   if (/android/.test(ua)) return "android";
   return "desktop";
 }
-
 installBtn.onclick = async () => {
   const platform = getPlatform();
-
   if (platform === "ios") {
     alert("On iPhone/iPad: Tap the Share icon → Add to Home Screen to install.");
     return;
   }
-
   if (deferredPrompt) {
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
   } else {
-    alert("Install option not available yet. Try again after browsing a bit.");
+    alert("Install option not available yet.");
   }
 };
 
-/* ✅ Load items */
-async function loadItems() {
-  items = await getAllItems();
-  renderItems();
-}
+/* Add button opens choice */
+addBtn.onclick = () => choiceModal.classList.remove("hidden");
+closeChoice.onclick = () => choiceModal.classList.add("hidden");
 
-function renderItems() {
-  const query = (searchInput.value || "").toLowerCase();
-
-  itemsContainer.innerHTML = "";
-  items
-    .filter((item) => item.name.toLowerCase().includes(query))
-    .forEach((item) => {
-      const card = document.createElement("div");
-      card.className = "item-card";
-
-      let imgUrl = "";
-      if (item.imageBlob) imgUrl = URL.createObjectURL(item.imageBlob);
-
-      card.innerHTML = `
-        ${imgUrl ? `<img src="${imgUrl}" />` : ""}
-        <h3>${item.name}</h3>
-        <p>${item.note || ""}</p>
-        <small>${item.date}</small>
-        <button data-id="${item.id}">Delete</button>
-      `;
-
-      card.querySelector("button").onclick = async () => {
-        await deleteItemFromDB(item.id);
-        await loadItems();
-      };
-
-      itemsContainer.appendChild(card);
-    });
-}
-
-
-addBtn.onclick = () => modal.classList.remove("hidden");
+/* Add Item */
+addItemBtn.onclick = () => {
+  choiceModal.classList.add("hidden");
+  modal.classList.remove("hidden");
+};
 closeModal.onclick = () => modal.classList.add("hidden");
 
-searchInput.addEventListener("input", renderItems);
+/* Add Container */
+addContainerBtn.onclick = () => {
+  choiceModal.classList.add("hidden");
+  containerModal.classList.remove("hidden");
+};
+closeContainerModal.onclick = () => containerModal.classList.add("hidden");
 
-/* ✅ Save item (Blob-based) */
+saveContainer.onclick = async () => {
+  const name = document.getElementById("containerName").value.trim();
+  if (!name) return alert("Enter a container name");
+
+  const newContainer = { id: Date.now(), name, items: [] };
+  await addContainerToDB(newContainer);
+  await loadContainers();
+  containerModal.classList.add("hidden");
+};
+
+/* Save Item */
 saveItem.onclick = async () => {
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
   const fileInput = document.getElementById("itemImage");
   const file = fileInput.files[0];
 
-  if (!name) return alert("Please enter a name");
-  if (!file) return alert("Please add a photo");
+  if (!name) return alert("Enter item name");
 
-  progressContainer.classList.remove("hidden");
-  uploadProgress.value = 0;
-
-  let fakeProgress = 0;
-  const interval = setInterval(() => {
-    fakeProgress += 10;
-    if (fakeProgress > 90) fakeProgress = 90;
-    uploadProgress.value = fakeProgress;
-  }, 80);
-
-  try {
-    const newItem = {
-      name,
-      note,
-      imageBlob: file,
-      date: new Date().toLocaleString()
-    };
-
-    await addItemToDB(newItem);
-    await loadItems();
-
-    clearInterval(interval);
-    uploadProgress.value = 100;
-
-    document.getElementById("itemName").value = "";
-    document.getElementById("itemNote").value = "";
-    fileInput.value = "";
-
-    setTimeout(() => {
-      progressContainer.classList.add("hidden");
-      uploadProgress.value = 0;
-      modal.classList.add("hidden");
-    }, 200);
-  } catch (err) {
-    clearInterval(interval);
-    alert("Error saving item.");
-  }
-};
-
-/* ✅ Export */
-exportBtn.onclick = async () => {
-  const allItems = await getAllItems();
-
-  const serializable = await Promise.all(
-    allItems.map(
-      (item) =>
-        new Promise((resolve) => {
-          if (!item.imageBlob) return resolve(item);
-
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve({ ...item, imageBlob: reader.result });
-          };
-          reader.readAsDataURL(item.imageBlob);
-        })
-    )
-  );
-
-  const blob = new Blob([JSON.stringify(serializable)], {
-    type: "application/json"
-  });
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "find-my-stuff-backup.json";
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-/* ✅ Import */
-importBtn.onclick = () => importInput.click();
-
-importInput.onchange = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = async () => {
-    let data = JSON.parse(reader.result);
-
-    data = data.map((item) => {
-      if (typeof item.imageBlob === "string") {
-        item.imageBlob = dataUrlToBlob(item.imageBlob);
-      }
-      return item;
-    });
-
-    await clearAllItems();
-    await bulkAddItems(data);
-    await loadItems();
-    alert("Import complete.");
+  const newItem = {
+    id: Date.now(),
+    name,
+    note,
+    date: new Date().toLocaleString(),
+    imageBlob: file || null
   };
 
-  reader.readAsText(file);
-  importInput.value = "";
+  if (currentContainer) {
+    await addItemToContainer(currentContainer, newItem);
+    await renderItems(currentContainer);
+  } else {
+    alert("Please open a container first to add items.");
+  }
+
+  modal.classList.add("hidden");
+  document.getElementById("itemName").value = "";
+  document.getElementById("itemNote").value = "";
+  fileInput.value = "";
 };
 
-function dataUrlToBlob(dataUrl) {
-  const [header, base64] = dataUrl.split(",");
-  const mime = header.match(/:(.*?);/)[1];
-  const binary = atob(base64);
-  const array = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
-  return new Blob([array], { type: mime });
+/* Render containers */
+async function loadContainers() {
+  containers = await getAllContainers();
+  renderContainers();
 }
 
-loadItems();
+function renderContainers() {
+  itemsContainer.innerHTML = "";
+  containers.forEach((c) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <h3>📦 ${c.name}</h3>
+      <small>Contains ${c.items.length} items</small>
+      <button data-id="${c.id}">Open</button>
+    `;
+    card.querySelector("button").onclick = () => {
+      currentContainer = c.id;
+      renderItems(c.id);
+    };
+    itemsContainer.appendChild(card);
+  });
+}
 
-/* ✅ Service worker registration (GitHub Pages path) */
+/* Render items inside container */
+async function renderItems(containerId) {
+  const container = containers.find((c) => c.id === containerId);
+  if (!container) return;
+
+  itemsContainer.innerHTML = "";
+
+  const backBtn = document.createElement("button");
+  backBtn.textContent = "⬅ Back to Containers";
+  backBtn.onclick = () => {
+    currentContainer = null;
+    renderContainers();
+  };
+  itemsContainer.appendChild(backBtn);
+
+  container.items.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+
+    let imgUrl = "";
+    if (item.imageBlob) imgUrl = URL.createObjectURL(item.imageBlob);
+
+    card.innerHTML = `
+      ${imgUrl ? `<img src="${imgUrl}" />` : ""}
+      <h3>${item.name}</h3>
+      <p>${item.note || ""}</p>
+      <small>${item.date}</small>
+      <button data-id="${item.id}">Delete</button>
+    `;
+    card.querySelector("button").onclick = async () => {
+      await deleteItemFromContainer(containerId, item.id);
+      await renderItems(containerId);
+    };
+    itemsContainer.appendChild(card);
+  });
+}
+
+/* Init */
+loadContainers();
+
+/* Service worker */
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/findmystuff/service-worker.js");
 }
