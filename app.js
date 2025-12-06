@@ -15,12 +15,9 @@ const importBtn = document.getElementById("importBtn");
 const importInput = document.getElementById("importInput");
 
 const darkToggle = document.getElementById("darkToggle");
+const installBtn = document.getElementById("installBtn");
 
-// ✅ Install banner elements
 let deferredPrompt;
-const installBanner = document.getElementById("installBanner");
-const installConfirm = document.getElementById("installConfirm");
-const installDismiss = document.getElementById("installDismiss");
 
 /* ✅ DARK MODE */
 if (localStorage.getItem("darkMode") === "true") {
@@ -35,27 +32,36 @@ darkToggle.onclick = () => {
   darkToggle.textContent = isDark ? "☀️" : "🌙";
 };
 
-/* ✅ INSTALL BANNER */
+/* ✅ INSTALL BUTTON LOGIC */
 window.addEventListener("beforeinstallprompt", (e) => {
-  console.log("beforeinstallprompt fired"); // debug log
   e.preventDefault();
   deferredPrompt = e;
-  document.body.classList.add("banner-active"); // push content down
-  installBanner.classList.remove("hidden"); // show banner
+  installBtn.style.display = "inline-flex"; // show button
 });
 
-installConfirm.onclick = async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const choice = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  installBanner.classList.add("hidden");
-  document.body.classList.remove("banner-active");
-};
+// Detect platform
+function getPlatform() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) return "ios";
+  if (/android/.test(ua)) return "android";
+  return "desktop";
+}
 
-installDismiss.onclick = () => {
-  installBanner.classList.add("hidden");
-  document.body.classList.remove("banner-active");
+installBtn.onclick = async () => {
+  const platform = getPlatform();
+
+  if (platform === "ios") {
+    alert("On iPhone/iPad: Tap the Share icon → Add to Home Screen to install.");
+    return;
+  }
+
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  } else {
+    alert("Install option not available yet. Try again after browsing a bit.");
+  }
 };
 
 /* ✅ Load items */
