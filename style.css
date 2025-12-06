@@ -52,6 +52,43 @@ header {
   background: #4caf50;
 }
 
+.install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #1976d2;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+}
+
+.install-banner p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.install-banner button {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#installConfirm {
+  background: #4caf50;
+  color: white;
+}
+
+#installDismiss {
+  background: #e53935;
+  color: white;
+}
+
 #items {
   padding: 15px;
   display: grid;
