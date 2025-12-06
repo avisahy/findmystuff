@@ -8,61 +8,17 @@ const saveItem = document.getElementById("saveItem");
 
 const itemsContainer = document.getElementById("items");
 
-const darkToggle = document.getElementById("darkToggle");
-const installBtn = document.getElementById("installBtn");
-
 const exportBtn = document.getElementById("exportBtn");
 const importBtn = document.getElementById("importBtn");
 const importInput = document.getElementById("importInput");
 
-let deferredPrompt;
-
-/* Dark mode */
-if (localStorage.getItem("darkMode") === "true") {
-  document.body.classList.add("dark");
-  darkToggle.textContent = "☀️";
-}
-darkToggle.onclick = () => {
-  document.body.classList.toggle("dark");
-  const isDark = document.body.classList.contains("dark");
-  localStorage.setItem("darkMode", isDark);
-  darkToggle.textContent = isDark ? "☀️" : "🌙";
-};
-
-/* Install button */
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = "inline-flex";
-});
-function getPlatform() {
-  const ua = navigator.userAgent.toLowerCase();
-  if (/iphone|ipad|ipod/.test(ua)) return "ios";
-  if (/android/.test(ua)) return "android";
-  return "desktop";
-}
-installBtn.onclick = async () => {
-  const platform = getPlatform();
-  if (platform === "ios") {
-    alert("On iPhone/iPad: Tap the Share icon → Add to Home Screen to install.");
-    return;
-  }
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-  } else {
-    alert("Install option not available yet.");
-  }
-};
-
-/* Add button opens item modal */
+/* Add button opens modal */
 addBtn.onclick = () => modal.classList.remove("hidden");
 closeModal.onclick = () => modal.classList.add("hidden");
 
 /* Save Item or Container */
 saveItem.onclick = async () => {
-  const typeSelect = document.getElementById("itemType").value; // "item" or "container"
+  const typeSelect = document.getElementById("itemType").value;
   const name = document.getElementById("itemName").value.trim();
   const note = document.getElementById("itemNote").value.trim();
   const fileInput = document.getElementById("itemImage");
@@ -74,7 +30,6 @@ saveItem.onclick = async () => {
   }
 
   if (typeSelect === "container") {
-    // ✅ Container: name required, desc + image optional
     const newContainer = {
       id: Date.now(),
       name,
@@ -82,10 +37,15 @@ saveItem.onclick = async () => {
       imageBlob: file || null,
       items: []
     };
-    await addContainerToDB(newContainer);
-    await loadContainers(); // refresh container list
+
+    if (currentContainer) {
+      await addItemToContainer(currentContainer, newContainer);
+      await renderItems(currentContainer); // auto refresh
+    } else {
+      await addContainerToDB(newContainer);
+      await loadContainers();
+    }
   } else {
-    // ✅ Item: name + image required, desc optional
     if (!file) {
       alert("Image is required for items");
       return;
@@ -99,24 +59,22 @@ saveItem.onclick = async () => {
     };
 
     if (currentContainer) {
-      // Inside a container → add and refresh immediately
       await addItemToContainer(currentContainer, newItem);
-      await renderItems(currentContainer); // ✅ auto refresh
+      await renderItems(currentContainer); // auto refresh
     } else {
-      // On main page → add item directly
-      let rootContainer = containers.find(c => c.id === "root");
-      if (!rootContainer) {
-        rootContainer = { id: "root", name: "Main Items", items: [] };
-        await addContainerToDB(rootContainer);
-        containers.push(rootContainer);
-      }
-      rootContainer.items.push(newItem);
-      await updateContainer(rootContainer);
-      await loadContainers(); // refresh main page
+      // root-level item is stored as a container-like entry
+      const newContainer = {
+        id: Date.now(),
+        name,
+        note,
+        imageBlob: file,
+        items: []
+      };
+      await addContainerToDB(newContainer);
+      await loadContainers();
     }
   }
 
-  // Reset modal
   modal.classList.add("hidden");
   document.getElementById("itemName").value = "";
   document.getElementById("itemNote").value = "";
@@ -134,15 +92,28 @@ function renderContainers() {
   containers.forEach((c) => {
     const card = document.createElement("div");
     card.className = "item-card";
+
+    let imgUrl = "";
+    if (c.imageBlob) imgUrl = URL.createObjectURL(c.imageBlob);
+
     card.innerHTML = `
+      ${imgUrl ? `<img src="${imgUrl}" />` : ""}
       <h3>📦 ${c.name}</h3>
+      <p>${c.note || ""}</p>
       <small>Contains ${c.items.length} items</small>
-      <button data-id="${c.id}">Open</button>
+      <button data-id="${c.id}" class="open-btn">Open</button>
+      <button data-id="${c.id}" class="delete-btn">Delete Container</button>
     `;
-    card.querySelector("button").onclick = () => {
+
+    card.querySelector(".open-btn").onclick = () => {
       currentContainer = c.id;
       renderItems(c.id);
     };
+    card.querySelector(".delete-btn").onclick = async () => {
+      await deleteContainer(c.id);
+      await loadContainers();
+    };
+
     itemsContainer.appendChild(card);
   });
 }
@@ -173,10 +144,10 @@ async function renderItems(containerId) {
       ${imgUrl ? `<img src="${imgUrl}" />` : ""}
       <h3>${item.name}</h3>
       <p>${item.note || ""}</p>
-      <small>${item.date}</small>
-      <button data-id="${item.id}">Delete</button>
+      <small>${item.date || ""}</small>
+      <button data-id="${item.id}" class="delete-item">Delete</button>
     `;
-    card.querySelector("button").onclick = async () => {
+    card.querySelector(".delete-item").onclick = async () => {
       await deleteItemFromContainer(containerId, item.id);
       await renderItems(containerId);
     };
@@ -193,6 +164,13 @@ exportBtn.onclick = async () => {
 
   for (const c of allContainers) {
     const containerCopy = { ...c, items: [] };
+    if (c.imageBlob) {
+      const filename = `images/container-${c.id}.png`;
+      const arrayBuffer = await c.imageBlob.arrayBuffer();
+      zip.file(filename, arrayBuffer);
+      containerCopy.imageFile = filename;
+      delete containerCopy.imageBlob;
+    }
     for (const item of c.items) {
       const itemCopy = { ...item };
       if (item.imageBlob) {
@@ -230,7 +208,11 @@ importInput.onchange = async (event) => {
   await clearAllContainers();
 
   for (const c of data.containers) {
-    const container = { id: c.id, name: c.name, items: [] };
+    const container = { id: c.id, name: c.name, note: c.note, items: [] };
+    if (c.imageFile && zip.file(c.imageFile)) {
+      const arrayBuffer = await zip.file(c.imageFile).async("arraybuffer");
+      container.imageBlob = new Blob([arrayBuffer], { type: "image/png" });
+    }
     for (const item of c.items) {
       let imageBlob = null;
       if (item.imageFile && zip.file(item.imageFile)) {
@@ -255,8 +237,3 @@ importInput.onchange = async (event) => {
 
 /* Init */
 loadContainers();
-
-/* Service worker */
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/findmystuff/service-worker.js");
-}
